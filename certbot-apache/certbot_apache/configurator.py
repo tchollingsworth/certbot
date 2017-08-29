@@ -175,8 +175,9 @@ class ApacheConfigurator(augeas_configurator.AugeasConfigurator):
         if value is not None:
             return value
         else:   # pragma: no cover
+            server_root = super(ApacheConfigurator, self).conf('server-root')
             os_constant = self.os_constant if self.os_constant is not None \
-                            else constants.os_constant
+                else constants.os_constant_for(None, server_root)
             return os_constant(var.replace('-', '_'))
 
     def prepare(self):
@@ -195,7 +196,8 @@ class ApacheConfigurator(augeas_configurator.AugeasConfigurator):
             raise errors.NoInstallationError("Problem in Augeas installation")
 
         # set up the os_constant for the specified or detected operating system
-        self.os_constant = constants.os_constant_for(self.conf('os'))
+        self.os_constant = constants.os_constant_for(self.conf('os'),
+                                                     self.conf('server-root'))
 
         # Verify Apache is installed
         restart_cmd = self.os_constant("restart_cmd")[0]

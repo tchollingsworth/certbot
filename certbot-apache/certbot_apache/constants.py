@@ -1,5 +1,6 @@
 """Apache plugin constants."""
 import pkg_resources
+import six
 from certbot import util
 
 CLI_DEFAULTS_DEFAULT = dict(
@@ -16,13 +17,13 @@ CLI_DEFAULTS_DEFAULT = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/apache2",
+    challenge_location="{server_root}",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_DEBIAN = dict(
     server_root="/etc/apache2",
-    vhost_root="/etc/apache2/sites-available",
+    vhost_root="{server_root}/sites-available",
     vhost_files="*",
     logs_root="/var/log/apache2",
     version_cmd=['apache2ctl', '-v'],
@@ -34,13 +35,13 @@ CLI_DEFAULTS_DEBIAN = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=True,
     handle_sites=True,
-    challenge_location="/etc/apache2",
+    challenge_location="{server_root}",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_CENTOS = dict(
     server_root="/etc/httpd",
-    vhost_root="/etc/httpd/conf.d",
+    vhost_root="{server_root}/conf.d",
     vhost_files="*.conf",
     logs_root="/var/log/httpd",
     version_cmd=['apachectl', '-v'],
@@ -52,13 +53,13 @@ CLI_DEFAULTS_CENTOS = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/httpd/conf.d",
+    challenge_location="{server_root}/conf.d",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "centos-options-ssl-apache.conf")
 )
 CLI_DEFAULTS_GENTOO = dict(
     server_root="/etc/apache2",
-    vhost_root="/etc/apache2/vhosts.d",
+    vhost_root="{server_root}/vhosts.d",
     vhost_files="*.conf",
     logs_root="/var/log/apache2",
     version_cmd=['/usr/sbin/apache2', '-v'],
@@ -70,13 +71,13 @@ CLI_DEFAULTS_GENTOO = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/apache2/vhosts.d",
+    challenge_location="{server_root}/vhosts.d",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_DARWIN = dict(
     server_root="/etc/apache2",
-    vhost_root="/etc/apache2/other",
+    vhost_root="{server_root}/other",
     vhost_files="*.conf",
     logs_root="/var/log/apache2",
     version_cmd=['/usr/sbin/httpd', '-v'],
@@ -88,13 +89,13 @@ CLI_DEFAULTS_DARWIN = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/apache2/other",
+    challenge_location="{server_root}/other",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_SUSE = dict(
     server_root="/etc/apache2",
-    vhost_root="/etc/apache2/vhosts.d",
+    vhost_root="{server_root}/vhosts.d",
     vhost_files="*.conf",
     logs_root="/var/log/apache2",
     version_cmd=['apache2ctl', '-v'],
@@ -106,13 +107,13 @@ CLI_DEFAULTS_SUSE = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/apache2/vhosts.d",
+    challenge_location="{server_root}/vhosts.d",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_ARCH = dict(
     server_root="/etc/httpd",
-    vhost_root="/etc/httpd/conf",
+    vhost_root="{server_root}/conf",
     vhost_files="*.conf",
     logs_root="/var/log/httpd",
     version_cmd=['apachectl', '-v'],
@@ -124,15 +125,15 @@ CLI_DEFAULTS_ARCH = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/etc/httpd/conf",
+    challenge_location="{server_root}/conf",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
 CLI_DEFAULTS_SOURCE = dict(
     server_root="/usr/local/apache2",
-    vhost_root="/usr/local/apache2/conf/extra",
+    vhost_root="{server_root}/conf/extra",
     vhost_files="*.conf",
-    logs_root="/usr/local/apache2/logs",
+    logs_root="{server_root}/logs",
     version_cmd=['apachectl', '-v'],
     define_cmd=['apachectl', '-t', '-D', 'DUMP_RUN_CFG'],
     restart_cmd=['apachectl', 'graceful'],
@@ -142,7 +143,7 @@ CLI_DEFAULTS_SOURCE = dict(
     le_vhost_ext="-le-ssl.conf",
     handle_mods=False,
     handle_sites=False,
-    challenge_location="/usr/local/apache2/conf/extra",
+    challenge_location="{server_root}/conf/extra",
     MOD_SSL_CONF_SRC=pkg_resources.resource_filename(
         "certbot_apache", "options-ssl-apache.conf")
 )
@@ -212,11 +213,12 @@ HEADER_ARGS = {"Strict-Transport-Security": HSTS_ARGS,
                "Upgrade-Insecure-Requests": UIR_ARGS}
 
 
-def os_constant_for(os=None):
+def os_constant_for(os=None, server_root=None):
     """
     Get a function that returns a constant value for a specified operating system
 
     :param os: name of operating system
+    :param server_root: the apache server root, if passed on the CLI
     :return: function that returns a constant value given a key
     """
 
@@ -238,7 +240,13 @@ def os_constant_for(os=None):
             constants = os_like_constants()
             if not constants:
                 constants = CLI_DEFAULTS["default"]
-        return constants[key]
+        value = constants[key]
+        if isinstance(value, six.string_types):
+            _server_root = server_root if server_root is not None else \
+                constants['server_root']
+            return value.format(server_root=_server_root)
+        else:
+            return value
 
     return os_constant_for_os
 
