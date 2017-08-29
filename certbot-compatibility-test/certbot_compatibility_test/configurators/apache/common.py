@@ -26,6 +26,7 @@ class Proxy(configurators_common.Proxy):
         """Initializes the plugin with the given command line args"""
         super(Proxy, self).__init__(args)
         self.le_config.apache_le_vhost_ext = "-le-ssl.conf"
+        self.le_config.apache_os = None
 
         self.modules = self.server_root = self.test_conf = self.version = None
         patch = mock.patch(

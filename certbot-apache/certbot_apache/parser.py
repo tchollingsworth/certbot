@@ -30,8 +30,10 @@ class ApacheParser(object):
     arg_var_interpreter = re.compile(r"\$\{[^ \}]*}")
     fnmatch_chars = set(["*", "?", "\\", "[", "]"])
 
-    def __init__(self, aug, root, vhostroot, version=(2, 4)):
+    def __init__(self, aug, root, vhostroot, version=(2, 4), os_constant=None):
         # Note: Order is important here.
+
+        self.os_constant = os_constant if os_constant is not None else constants.os_constant
 
         # This uses the binary, so it can be done first.
         # https://httpd.apache.org/docs/2.4/mod/core.html#define
@@ -64,7 +66,7 @@ class ApacheParser(object):
 
         # Must also attempt to parse virtual host root
         self._parse_file(self.vhostroot + "/" +
-                         constants.os_constant("vhost_files"))
+                         self.os_constant("vhost_files"))
 
         # check to see if there were unparsed define statements
         if version < (2, 4):
@@ -134,7 +136,7 @@ class ApacheParser(object):
         """
         try:
             proc = subprocess.Popen(
-                constants.os_constant("define_cmd"),
+                self.os_constant("define_cmd"),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True)
@@ -143,10 +145,10 @@ class ApacheParser(object):
         except (OSError, ValueError):
             logger.error(
                 "Error running command %s for runtime parameters!%s",
-                constants.os_constant("define_cmd"), os.linesep)
+                self.os_constant("define_cmd"), os.linesep)
             raise errors.MisconfigurationError(
                 "Error accessing loaded Apache parameters: %s",
-                constants.os_constant("define_cmd"))
+                self.os_constant("define_cmd"))
         # Small errors that do not impede
         if proc.returncode != 0:
             logger.warning("Error in checking parameter list: %s", stderr)

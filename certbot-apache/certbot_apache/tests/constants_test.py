@@ -30,6 +30,12 @@ class ConstantsTest(unittest.TestCase):
         self.assertEqual(constants.os_constant("vhost_root"),
                          "/etc/apache2/sites-available")
 
+    def test_get_source_values(self):
+        self.assertFalse(constants.os_constant_for('source')("handle_mods"))
+        self.assertEqual(constants.os_constant_for('source')("server_root"), "/usr/local/apache2")
+        self.assertEqual(constants.os_constant_for('source')("vhost_root"),
+                         "/usr/local/apache2/conf/extra")
+
     @mock.patch("certbot.util.get_systemd_os_like")
     @mock.patch("certbot.util.get_os_info")
     def test_get_darwin_like_values(self, os_info, os_like):

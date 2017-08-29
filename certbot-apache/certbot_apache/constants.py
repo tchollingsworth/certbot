@@ -212,22 +212,45 @@ HEADER_ARGS = {"Strict-Transport-Security": HSTS_ARGS,
                "Upgrade-Insecure-Requests": UIR_ARGS}
 
 
+def os_constant_for(os=None):
+    """
+    Get a function that returns a constant value for a specified operating system
+
+    :param os: name of operating system
+    :return: function that returns a constant value given a key
+    """
+
+    if os is None:
+        os_info = util.get_os_info()
+        os = os_info[0].lower()
+
+    def os_constant_for_os(key):
+        """
+        Get a constant value for operating system
+
+        :param key: name of cli constant
+        :return: value of constant for active os
+        """
+
+        try:
+            constants = CLI_DEFAULTS[os]
+        except KeyError:
+            constants = os_like_constants()
+            if not constants:
+                constants = CLI_DEFAULTS["default"]
+        return constants[key]
+
+    return os_constant_for_os
+
+
 def os_constant(key):
     """
-    Get a constant value for operating system
+    Get a constant value for the currently detected operating system
 
     :param key: name of cli constant
     :return: value of constant for active os
     """
-
-    os_info = util.get_os_info()
-    try:
-        constants = CLI_DEFAULTS[os_info[0].lower()]
-    except KeyError:
-        constants = os_like_constants()
-        if not constants:
-            constants = CLI_DEFAULTS["default"]
-    return constants[key]
+    return os_constant_for()(key)
 
 
 def os_like_constants():

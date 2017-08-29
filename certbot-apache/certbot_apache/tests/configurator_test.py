@@ -119,6 +119,10 @@ class MultipleVhostsTest(util.ApacheTest):
         # Weak test..
         ApacheConfigurator.add_parser_arguments(mock.MagicMock())
 
+    def test_os_conf(self):
+        self.assertEqual(self.config.os_conf('server-root'), self.config_path)
+        self.assertEqual(self.config.os_conf("le-vhost-ext"), "-le-ssl.conf")
+
     @certbot_util.patch_get_utility()
     def test_get_all_names(self, mock_getutility):
         mock_utility = mock_getutility()
